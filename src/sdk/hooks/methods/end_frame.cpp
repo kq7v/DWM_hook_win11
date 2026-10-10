@@ -1,4 +1,3 @@
-#include <sdk/hooks/hooks.hpp>
 #include <sdk/hooks/methods/methods.hpp>
 #include <sdk/dwm/dwm.hpp>
 #include <backends/dwm/dwm.hpp>
@@ -11,16 +10,11 @@ namespace sdk::hook_methods {
         }
 
         Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-        sdk::dwm->frame_texture( context, &texture );
+        dwm->frame_texture( context, &texture );
         const auto result = end_frame_original( context );
 
         if( SUCCEEDED( result ) && texture ) {
-            try {
-                backends::dwm->render( texture.Get( ) );
-            } catch( ... ) {
-                hooks->enabled = false;
-                backends::dwm->shutdown( );
-            }
+            backends::dwm->render( texture.Get( ) );
         }
 
         return result;

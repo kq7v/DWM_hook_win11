@@ -11,7 +11,7 @@ namespace core {
     };
 
     struct input_frame {
-        POINT position { -1000, -1000 };
+        POINT position { .x = -1000, .y = -1000 };
         float scale = 1, wheel = 0;
         std::array<mouse_event, 64> events { };
         std::size_t count = 0;

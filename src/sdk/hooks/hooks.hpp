@@ -1,28 +1,23 @@
 #pragma once
 
 #include <windows.h>
-#include <array>
 #include <atomic>
 #include <mutex>
 
 namespace sdk {
     class c_hooks {
         std::mutex mutex;
-        std::array<void*, 4> addresses { };
+        HMODULE module = nullptr;
         bool installed = false;
-        bool owns_minhook = false;
 
-        bool create( );
-        bool enable( );
-        void rollback( );
-        HRESULT initialize_input( );
+        bool install( );
 
       public:
 
         std::atomic<bool> enabled { false };
 
-        HRESULT initialize( );
-        HRESULT shutdown( );
+        bool initialize( );
+        void shutdown( );
     };
 
     extern c_hooks* const hooks;

@@ -1,12 +1,12 @@
 #pragma once
 
 #include <libhat/scanner.hpp>
-#include <vector>
+#include <windows.h>
 
 namespace core {
     class c_module {
         std::span<const std::byte> image;
-        std::vector<std::span<const std::byte>> code;
+        std::span<const IMAGE_SECTION_HEADER> sections;
 
       public:
 

@@ -2,7 +2,7 @@
 
 namespace {
     DWORD WINAPI start( void* ) {
-        if( FAILED( sdk::hooks->initialize( ) ) ) {
+        if( !sdk::hooks->initialize( ) ) {
             OutputDebugStringW( L"dwm_hook: initialization failed\n" );
         }
 

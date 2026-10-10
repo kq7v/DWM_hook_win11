@@ -61,8 +61,10 @@ namespace sdk {
         }
 
         const auto getter = module.find( signatures::texture_getter );
-        const auto thunk =
-            module.match( texture_table[ c_device_texture::get_texture_slot ], signatures::texture_getter_thunk );
+        const auto thunk = module.match(
+            texture_table[ c_device_texture::get_texture_slot ],
+            signatures::texture_getter_thunk
+        );
 
         return getter.has_result( ) && thunk.rel( 8 ) == getter.get( );
     }
