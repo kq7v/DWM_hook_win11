@@ -16,6 +16,7 @@ namespace features {
         const auto display = ImGui::GetIO( ).DisplaySize;
         const float margin = 8 * scale;
         const ImVec2 available { std::max( 1.0f, display.x - margin * 2 ), std::max( 1.0f, display.y - margin * 2 ) };
+
         ImGui::SetNextWindowSizeConstraints(
             { std::min( 300 * scale, available.x ), std::min( 190 * scale, available.y ) }, available
         );
@@ -40,9 +41,9 @@ namespace features {
               static_cast<LONG>( position.x + size.x ), static_cast<LONG>( position.y + size.y ) }
         );
         ImGui::End( );
+
         if( !open ) {
             opened = false;
         }
     }
-
 }

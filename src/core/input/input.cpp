@@ -21,17 +21,18 @@ namespace core {
         }
 
         stop_event = CreateEventW( nullptr, TRUE, FALSE, nullptr );
-
         if( !stop_event ) {
             return HRESULT_FROM_WIN32( GetLastError( ) );
         }
 
         ready_event = CreateEventW( nullptr, TRUE, FALSE, nullptr );
         thread = ready_event ? CreateThread( nullptr, 0, run, module, 0, nullptr ) : nullptr;
+
         HRESULT hr = thread ? S_OK : HRESULT_FROM_WIN32( GetLastError( ) );
 
         if( SUCCEEDED( hr ) ) {
             const auto wait = WaitForSingleObject( ready_event, 3000 );
+
             hr = wait == WAIT_OBJECT_0 ? result.load( )
                                        : HRESULT_FROM_WIN32( wait == WAIT_TIMEOUT ? ERROR_TIMEOUT : GetLastError( ) );
         }

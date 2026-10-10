@@ -1,14 +1,17 @@
 #pragma once
+
 #include <d3d11.h>
 #include <cstddef>
 
 namespace sdk {
     struct c_device_texture {
         static constexpr std::size_t get_texture_slot = 15;
+
         void* const* table;
 
         ID3D11Texture2D* get_texture( ) {
             using function = ID3D11Texture2D*(__fastcall*)( c_device_texture* );
+
             return reinterpret_cast<function>( table[ get_texture_slot ] )( this );
         }
     };

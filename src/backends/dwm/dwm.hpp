@@ -1,4 +1,5 @@
 #pragma once
+
 #include <d3d11.h>
 #include <atomic>
 #include <mutex>
@@ -16,6 +17,7 @@ namespace backends {
 
         struct context_scope {
             ImGuiContext* previous;
+
             context_scope( );
             ~context_scope( );
         };
@@ -27,6 +29,7 @@ namespace backends {
 
         void initialize( void ( *callback )( ) );
         void shutdown( );
+
         bool needs_redraw( ) const;
         void render( ID3D11Texture2D* texture );
         void presented( );

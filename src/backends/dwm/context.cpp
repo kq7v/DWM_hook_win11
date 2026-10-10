@@ -21,6 +21,7 @@ namespace backends {
 
     void c_dwm::initialize( void ( *callback )( ) ) {
         std::lock_guard lock( mutex );
+
         draw_ui = callback;
         active = true;
     }
@@ -36,15 +37,18 @@ namespace backends {
         if( std::abs( value - scale ) < 0.01f ) {
             return;
         }
+
         detail::renderer->invalidate( );
         ImGui::GetStyle( ) = ImGuiStyle( );
         ImGui::StyleColorsDark( );
         ImGui::GetStyle( ).ScaleAllSizes( value );
+
         auto& fonts = *ImGui::GetIO( ).Fonts;
         fonts.Clear( );
         ImFontConfig config;
         config.SizePixels = 16.0f * value;
         fonts.AddFontDefault( &config );
+
         scale = value;
     }
 
@@ -54,11 +58,13 @@ namespace backends {
             if( scope.previous == context ) {
                 scope.previous = nullptr;
             }
+
             ImGui::SetCurrentContext( context );
             detail::renderer->shutdown( );
             ImGui::DestroyContext( context );
             context = nullptr;
         }
+
         scale = 0;
     }
 }

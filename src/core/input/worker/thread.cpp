@@ -1,6 +1,4 @@
 #include <core/input/input.hpp>
-#include <sdk/hooks/hooks.hpp>
-#include <features/menu/menu.hpp>
 #include <sdk/dwm/dwm.hpp>
 #include <backends/dwm/dwm.hpp>
 #include <shellscalingapi.h>
@@ -10,7 +8,9 @@ namespace core {
         const auto monitor = MonitorFromPoint( { 0, 0 }, MONITOR_DEFAULTTOPRIMARY );
         DEVICE_SCALE_FACTOR scale = SCALE_100_PERCENT;
         GetScaleFactorForMonitor( monitor, &scale );
+
         std::lock_guard lock( mutex );
+
         pending.scale = static_cast<float>( scale ) / 100.0f;
     }
 
@@ -23,8 +23,10 @@ namespace core {
     DWORD c_input::poll( HMODULE module ) {
         const auto previous_dpi = SetThreadDpiAwarenessContext( DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 );
         update_display( );
+
         POINT position { -1000, -1000 };
         GetCursorPos( &position );
+
         {
             std::lock_guard lock( mutex );
             pending.position = position;
@@ -34,8 +36,10 @@ namespace core {
         PeekMessageW( &message, nullptr, 0, 0, PM_NOREMOVE );
         const HHOOK hook = SetWindowsHookExW( WH_MOUSE_LL, mouse_hook, module, 0 );
         const HHOOK keys = hook ? SetWindowsHookExW( WH_KEYBOARD_LL, keyboard_hook, module, 0 ) : nullptr;
+
         result = hook && keys ? S_OK : HRESULT_FROM_WIN32( GetLastError( ) );
         SetEvent( ready_event );
+
         ULONGLONG last_redraw = 0, last_display = GetTickCount64( );
 
         while( hook && keys ) {
@@ -66,6 +70,7 @@ namespace core {
         if( keys ) {
             UnhookWindowsHookEx( keys );
         }
+
         if( hook ) {
             UnhookWindowsHookEx( hook );
         }

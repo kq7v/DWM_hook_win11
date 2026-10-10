@@ -1,8 +1,6 @@
 #include <backends/dx11/renderer.hpp>
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
-#include <d3d11_1.h>
-#include <wrl/client.h>
 #include <algorithm>
 #include <utility>
 
@@ -96,10 +94,12 @@ namespace backends::detail {
         if( state.texture != texture ) {
             ComPtr<ID3D11RenderTargetView> target;
             state.context->OMGetRenderTargets( 1, &target, nullptr );
+
             if( target ) {
                 ComPtr<ID3D11Resource> resource;
                 ComPtr<ID3D11Texture2D> bound;
                 target->GetResource( &resource );
+
                 if( FAILED( resource.As( &bound ) ) || bound.Get( ) != texture ) {
                     target.Reset( );
                 }
@@ -115,14 +115,11 @@ namespace backends::detail {
 
         device_state_scope scope( *this );
 
-        if( !state.fonts ) {
-            if( !ImGui_ImplDX11_CreateDeviceObjects( ) ) {
-                return false;
-            }
-
-            state.fonts = true;
+        if( !state.fonts && !ImGui_ImplDX11_CreateDeviceObjects( ) ) {
+            return false;
         }
 
+        state.fonts = true;
         ImGui::GetIO( ).DisplaySize = { static_cast<float>( desc.Width ), static_cast<float>( desc.Height ) };
         update_time( );
         ImGui_ImplDX11_NewFrame( );

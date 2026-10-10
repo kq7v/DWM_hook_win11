@@ -15,9 +15,11 @@ namespace sdk::hook_methods {
         bool local_submitted = false;
         auto* output = submitted ? submitted : &local_submitted;
         const auto result = present_original( self, chain, flags, dirty, interval, output, legacy );
+
         if( display_context && SUCCEEDED( result ) && *output && !( flags & DXGI_PRESENT_TEST ) ) {
             backends::dwm->presented( );
         }
+
         return result;
     }
 }

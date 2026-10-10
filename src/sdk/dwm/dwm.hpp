@@ -1,4 +1,5 @@
 #pragma once
+
 #include <sdk/dwm/addresses.hpp>
 #include <sdk/dwm/interfaces/drawing_context.hpp>
 

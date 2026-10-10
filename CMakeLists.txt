@@ -14,8 +14,10 @@ set( CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>" )
 include( cmake/dependencies/imgui.cmake )
 include( cmake/dependencies/minhook.cmake )
 include( cmake/dependencies/libhat.cmake )
+
 file( GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "src/*.cpp" )
 add_library( dwm_hook SHARED ${PROJECT_SOURCES} )
+
 target_include_directories( dwm_hook PRIVATE src )
 target_compile_definitions( dwm_hook PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UNICODE _UNICODE _WIN32_WINNT=0x0A00 )
 target_compile_options( dwm_hook PRIVATE /W4 /WX /permissive- /utf-8 )

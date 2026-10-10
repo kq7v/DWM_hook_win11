@@ -13,6 +13,7 @@ namespace sdk {
         bool owns_minhook = false;
 
         bool create( );
+        bool enable( );
         void rollback( );
         HRESULT initialize_input( );
 

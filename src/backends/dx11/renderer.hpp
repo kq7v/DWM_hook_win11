@@ -29,6 +29,7 @@ namespace backends::detail {
 
         bool new_frame( ID3D11Texture2D* texture );
         void draw( ImDrawData* data );
+
         void invalidate( );
         void shutdown( );
     };

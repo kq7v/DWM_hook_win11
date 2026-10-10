@@ -6,14 +6,14 @@
 
 namespace sdk::hook_methods {
     HRESULT __fastcall end_frame( c_drawing_context* context ) {
-        // IsDisplayTarget() is also true for CDDASwapChain's capture buffer.
-        // Only physical monitor passes may render the overlay into their native texture.
         if( !display_context || display_context != context ) {
             return end_frame_original( context );
         }
+
         Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
         sdk::dwm->frame_texture( context, &texture );
         const auto result = end_frame_original( context );
+
         if( SUCCEEDED( result ) && texture ) {
             try {
                 backends::dwm->render( texture.Get( ) );
@@ -22,6 +22,7 @@ namespace sdk::hook_methods {
                 backends::dwm->shutdown( );
             }
         }
+
         return result;
     }
 }
