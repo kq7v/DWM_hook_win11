@@ -1,7 +1,7 @@
 #include <features/menu/menu.hpp>
 #include <imgui.h>
+#include <core/input/input.hpp>
 #include <algorithm>
-#include <cmath>
 
 namespace features {
     namespace {
@@ -34,15 +34,15 @@ namespace features {
             ImGui::TextWrapped( "Insert: show/hide. End: stop hook." );
         }
 
+        const auto position = ImGui::GetWindowPos( ), size = ImGui::GetWindowSize( );
+        core::input->set_panel(
+            { static_cast<LONG>( position.x ), static_cast<LONG>( position.y ),
+              static_cast<LONG>( position.x + size.x ), static_cast<LONG>( position.y + size.y ) }
+        );
         ImGui::End( );
         if( !open ) {
             opened = false;
         }
     }
 
-    void c_menu::reset( ) {
-        clicks = 0;
-        checked = false;
-        value = 0.5f;
-    }
 }

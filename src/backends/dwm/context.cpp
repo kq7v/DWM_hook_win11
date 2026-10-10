@@ -1,9 +1,9 @@
-#include <backends/imgui_impl_dwm.hpp>
+#include <backends/dwm/dwm.hpp>
+#include <backends/dx11/renderer.hpp>
 #include <core/input/input.hpp>
-#include <backends/dwm/renderer.hpp>
+#include <sdk/dwm/dwm.hpp>
 #include <imgui.h>
 #include <cmath>
-#include <span>
 
 namespace backends {
     namespace {
@@ -12,42 +12,11 @@ namespace backends {
 
     c_dwm* const dwm = &instance;
 
-    void c_dwm::rescale( float requested ) {
-        if( std::abs( requested - current_scale ) < 0.01f ) {
-            return;
-        }
-
-        if( ImGui::GetIO( ).BackendRendererUserData ) {
-            detail::renderer->invalidate( );
-        }
-
-        ImGui::GetStyle( ) = ImGuiStyle( );
-        ImGui::StyleColorsDark( );
-        ImGui::GetStyle( ).ScaleAllSizes( requested );
-        auto& fonts = *ImGui::GetIO( ).Fonts;
-        fonts.Clear( );
-        ImFontConfig config;
-        config.SizePixels = 16.0f * requested;
-        fonts.AddFontDefault( &config );
-        current_scale = requested;
+    c_dwm::context_scope::context_scope( ) : previous( ImGui::GetCurrentContext( ) ) {
     }
 
-    void c_dwm::update_input( const core::input_frame& frame ) {
-        auto& io = ImGui::GetIO( );
-
-        if( frame.reset ) {
-            for( int i = 0; i < 5; ++i ) {
-                io.AddMouseButtonEvent( i, false );
-            }
-        }
-
-        for( const auto& event : std::span( frame.events ).first( frame.count ) ) {
-            io.AddMousePosEvent( static_cast<float>( event.position.x ), static_cast<float>( event.position.y ) );
-            io.AddMouseButtonEvent( event.button, event.down );
-        }
-
-        io.AddMousePosEvent( static_cast<float>( frame.position.x ), static_cast<float>( frame.position.y ) );
-        io.AddMouseWheelEvent( 0, frame.wheel );
+    c_dwm::context_scope::~context_scope( ) {
+        ImGui::SetCurrentContext( previous );
     }
 
     void c_dwm::initialize( void ( *callback )( ) ) {
@@ -58,18 +27,38 @@ namespace backends {
 
     void c_dwm::shutdown( ) {
         active = false;
+        pending = true;
         core::input->set_panel( { } );
+        sdk::dwm->request_frame( );
+    }
+
+    void c_dwm::rescale( float value ) {
+        if( std::abs( value - scale ) < 0.01f ) {
+            return;
+        }
+        detail::renderer->invalidate( );
+        ImGui::GetStyle( ) = ImGuiStyle( );
+        ImGui::StyleColorsDark( );
+        ImGui::GetStyle( ).ScaleAllSizes( value );
+        auto& fonts = *ImGui::GetIO( ).Fonts;
+        fonts.Clear( );
+        ImFontConfig config;
+        config.SizePixels = 16.0f * value;
+        fonts.AddFontDefault( &config );
+        scale = value;
     }
 
     void c_dwm::destroy_context( ) {
         if( context ) {
-            const auto previous = ImGui::GetCurrentContext( );
+            context_scope scope;
+            if( scope.previous == context ) {
+                scope.previous = nullptr;
+            }
             ImGui::SetCurrentContext( context );
             detail::renderer->shutdown( );
             ImGui::DestroyContext( context );
-            ImGui::SetCurrentContext( previous == context ? nullptr : previous );
             context = nullptr;
         }
-        current_scale = 0;
+        scale = 0;
     }
 }

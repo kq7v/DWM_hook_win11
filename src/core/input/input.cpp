@@ -1,7 +1,4 @@
 #include <core/input/input.hpp>
-#include <sdk/hooks/hooks.hpp>
-#include <features/menu/menu.hpp>
-#include <algorithm>
 
 namespace core {
     namespace {
@@ -64,5 +61,4 @@ namespace core {
         thread = stop_event = ready_event = nullptr;
         release( );
     }
-
 }

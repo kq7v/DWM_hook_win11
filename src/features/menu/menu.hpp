@@ -14,7 +14,6 @@ namespace features {
         std::atomic<bool> opened { true };
 
         void draw( );
-        void reset( );
     };
 
     extern c_menu* const menu;

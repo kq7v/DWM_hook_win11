@@ -14,7 +14,6 @@ namespace core {
 
     struct input_frame {
         POINT position { -1000, -1000 };
-        SIZE screen { };
         float scale = 1, wheel = 0;
         std::array<mouse_event, 64> events { };
         std::size_t count = 0;
@@ -43,7 +42,6 @@ namespace core {
         HRESULT initialize( HMODULE module );
         void shutdown( );
         input_frame consume( );
-        SIZE screen( );
         void set_panel( RECT rect );
         void release( );
     };

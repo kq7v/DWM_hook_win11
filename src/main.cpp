@@ -1,11 +1,10 @@
 #include <sdk/hooks/hooks.hpp>
-#include <common/diagnostics/log.hpp>
 
 namespace {
     DWORD WINAPI start( void* ) {
-        diagnostics::log( "DLL worker started" );
-        const auto result = sdk::hooks->initialize( );
-        diagnostics::log( "hooks initialize = 0x%08lX", static_cast<unsigned long>( result ) );
+        if( FAILED( sdk::hooks->initialize( ) ) ) {
+            OutputDebugStringW( L"dwm_hook: initialization failed\n" );
+        }
 
         return 0;
     }

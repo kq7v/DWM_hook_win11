@@ -1,11 +1,10 @@
 #include <sdk/hooks/hooks.hpp>
-#include <sdk/hooks/detail/callbacks.hpp>
+#include <sdk/hooks/methods/methods.hpp>
 #include <sdk/dwm/dwm.hpp>
 #include <core/input/input.hpp>
-#include <backends/imgui_impl_dwm.hpp>
+#include <backends/dwm/dwm.hpp>
 #include <features/menu/menu.hpp>
 #include <MinHook.h>
-#include <common/diagnostics/log.hpp>
 
 namespace sdk {
     namespace {
@@ -31,17 +30,17 @@ namespace sdk {
     c_hooks* const hooks = &instance;
 
     bool c_hooks::create( ) {
-        using namespace hook_callbacks;
+        using namespace hook_methods;
 
         if( !dwm->initialize( ) ) {
-            diagnostics::log( "DWM layout resolution failed" );
             return false;
         }
 
-        const auto native = dwm->targets( );
-        return create_hook( native.end_frame, &end_frame, end_frame_original, addresses[ 0 ] ) &&
-               create_hook( native.compose, &compose, compose_original, addresses[ 1 ] ) &&
-               create_hook( native.present, &present, present_original, addresses[ 2 ] );
+        const auto& native = dwm->targets;
+        return create_hook( native[ 0 ], &end_frame, end_frame_original, addresses[ 0 ] ) &&
+               create_hook( native[ 1 ], &legacy, legacy_original, addresses[ 1 ] ) &&
+               create_hook( native[ 2 ], &display, display_original, addresses[ 2 ] ) &&
+               create_hook( native[ 3 ], &present, present_original, addresses[ 3 ] );
     }
 
     void c_hooks::rollback( ) {
@@ -62,7 +61,7 @@ namespace sdk {
         HMODULE module = nullptr;
         if( !GetModuleHandleExW(
                 GET_MODULE_HANDLE_EX_FLAG_PIN | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-                reinterpret_cast<LPCWSTR>( &hook_callbacks::present ), &module
+                reinterpret_cast<LPCWSTR>( &hook_methods::present ), &module
             ) ) {
             return HRESULT_FROM_WIN32( GetLastError( ) );
         }
@@ -78,7 +77,6 @@ namespace sdk {
         }
 
         if( GetSystemMetrics( SM_CMONITORS ) != 1 ) {
-            diagnostics::log( "unsupported monitor count=%d", GetSystemMetrics( SM_CMONITORS ) );
             return HRESULT_FROM_WIN32( ERROR_NOT_SUPPORTED );
         }
 
@@ -101,7 +99,6 @@ namespace sdk {
         }
 
         const auto result = initialize_input( );
-        diagnostics::log( "input initialize = 0x%08lX", static_cast<unsigned long>( result ) );
         if( FAILED( result ) ) {
             if( !installed ) {
                 rollback( );
@@ -118,13 +115,20 @@ namespace sdk {
         if( !installed ) {
             for( auto* address : addresses ) {
                 // Limit changes to this DLL's hooks, even when MinHook was initialized elsewhere.
-                if( MH_EnableHook( address ) != MH_OK ) {
+                if( MH_QueueEnableHook( address ) != MH_OK ) {
                     enabled = false;
                     core::input->shutdown( );
                     backends::dwm->shutdown( );
                     rollback( );
                     return E_FAIL;
                 }
+            }
+            if( MH_ApplyQueued( ) != MH_OK ) {
+                enabled = false;
+                core::input->shutdown( );
+                backends::dwm->shutdown( );
+                rollback( );
+                return E_FAIL;
             }
             installed = true;
         }

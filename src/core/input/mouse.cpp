@@ -73,12 +73,6 @@ namespace core {
         panel = rect;
     }
 
-    SIZE c_input::screen( ) {
-        std::lock_guard lock( mutex );
-
-        return pending.screen;
-    }
-
     input_frame c_input::consume( ) {
         std::lock_guard lock( mutex );
         const auto frame = pending;

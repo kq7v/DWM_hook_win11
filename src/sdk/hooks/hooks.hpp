@@ -8,7 +8,7 @@
 namespace sdk {
     class c_hooks {
         std::mutex mutex;
-        std::array<void*, 3> addresses { };
+        std::array<void*, 4> addresses { };
         bool installed = false;
         bool owns_minhook = false;
 

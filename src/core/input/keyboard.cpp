@@ -1,7 +1,6 @@
 #include <core/input/input.hpp>
 #include <sdk/hooks/hooks.hpp>
 #include <features/menu/menu.hpp>
-#include <common/diagnostics/log.hpp>
 
 namespace core {
     namespace {
@@ -24,14 +23,12 @@ namespace core {
             if( down && !input->insert_down ) {
                 features::menu->opened = !features::menu->opened;
                 input->release( );
-                diagnostics::log( "menu open=%d", features::menu->opened.load( ) );
             }
             input->insert_down = down;
             return 1;
         }
         if( down && event.vkCode == VK_END ) {
             sdk::hooks->enabled = false;
-            diagnostics::log( "shutdown requested by End" );
             if( const auto controller = CreateThread( nullptr, 0, stop_hooks, nullptr, 0, nullptr ) ) {
                 CloseHandle( controller );
             }
