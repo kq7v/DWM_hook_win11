@@ -1,0 +1,144 @@
+#include <sdk/hooks/hooks.hpp>
+#include <sdk/hooks/detail/callbacks.hpp>
+#include <sdk/dwm/dwm.hpp>
+#include <core/input/input.hpp>
+#include <backends/imgui_impl_dwm.hpp>
+#include <features/menu/menu.hpp>
+#include <MinHook.h>
+#include <common/diagnostics/log.hpp>
+
+namespace sdk {
+    namespace {
+        c_hooks instance;
+
+        template <class F>
+        bool create_hook( const unsigned char* address, F method, F& original, void*& created ) {
+            if( !address ) {
+                return false;
+            }
+
+            auto* target = const_cast<unsigned char*>( address );
+            if( MH_CreateHook( target, reinterpret_cast<void*>( method ), reinterpret_cast<void**>( &original ) ) !=
+                MH_OK ) {
+                return false;
+            }
+
+            created = target;
+            return true;
+        }
+    }
+
+    c_hooks* const hooks = &instance;
+
+    bool c_hooks::create( ) {
+        using namespace hook_callbacks;
+
+        if( !dwm->initialize( ) ) {
+            diagnostics::log( "DWM layout resolution failed" );
+            return false;
+        }
+
+        const auto native = dwm->targets( );
+        return create_hook( native.end_frame, &end_frame, end_frame_original, addresses[ 0 ] ) &&
+               create_hook( native.compose, &compose, compose_original, addresses[ 1 ] ) &&
+               create_hook( native.present, &present, present_original, addresses[ 2 ] );
+    }
+
+    void c_hooks::rollback( ) {
+        for( auto*& address : addresses ) {
+            if( address ) {
+                MH_RemoveHook( address );
+                address = nullptr;
+            }
+        }
+
+        if( owns_minhook ) {
+            MH_Uninitialize( );
+            owns_minhook = false;
+        }
+    }
+
+    HRESULT c_hooks::initialize_input( ) {
+        HMODULE module = nullptr;
+        if( !GetModuleHandleExW(
+                GET_MODULE_HANDLE_EX_FLAG_PIN | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                reinterpret_cast<LPCWSTR>( &hook_callbacks::present ), &module
+            ) ) {
+            return HRESULT_FROM_WIN32( GetLastError( ) );
+        }
+
+        return core::input->initialize( module );
+    }
+
+    HRESULT c_hooks::initialize( ) {
+        std::lock_guard lock( mutex );
+
+        if( enabled ) {
+            return S_FALSE;
+        }
+
+        if( GetSystemMetrics( SM_CMONITORS ) != 1 ) {
+            diagnostics::log( "unsupported monitor count=%d", GetSystemMetrics( SM_CMONITORS ) );
+            return HRESULT_FROM_WIN32( ERROR_NOT_SUPPORTED );
+        }
+
+        if( !installed ) {
+            const auto status = MH_Initialize( );
+            if( status != MH_OK && status != MH_ERROR_ALREADY_INITIALIZED ) {
+                return E_FAIL;
+            }
+            owns_minhook = status == MH_OK;
+
+            try {
+                if( !create( ) ) {
+                    rollback( );
+                    return HRESULT_FROM_WIN32( ERROR_NOT_SUPPORTED );
+                }
+            } catch( ... ) {
+                rollback( );
+                return E_OUTOFMEMORY;
+            }
+        }
+
+        const auto result = initialize_input( );
+        diagnostics::log( "input initialize = 0x%08lX", static_cast<unsigned long>( result ) );
+        if( FAILED( result ) ) {
+            if( !installed ) {
+                rollback( );
+            }
+            return result;
+        }
+
+        backends::dwm->initialize( []( ) {
+            features::menu->draw( );
+        } );
+        features::menu->opened = true;
+        enabled = true;
+
+        if( !installed ) {
+            for( auto* address : addresses ) {
+                // Limit changes to this DLL's hooks, even when MinHook was initialized elsewhere.
+                if( MH_EnableHook( address ) != MH_OK ) {
+                    enabled = false;
+                    core::input->shutdown( );
+                    backends::dwm->shutdown( );
+                    rollback( );
+                    return E_FAIL;
+                }
+            }
+            installed = true;
+        }
+
+        return S_OK;
+    }
+
+    HRESULT c_hooks::shutdown( ) {
+        std::lock_guard lock( mutex );
+        enabled = false;
+        core::input->shutdown( );
+        backends::dwm->shutdown( );
+
+        // Pinned callbacks complete a native redraw and release ImGui on the compositor thread.
+        return S_OK;
+    }
+}
