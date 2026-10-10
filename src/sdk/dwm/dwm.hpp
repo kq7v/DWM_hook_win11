@@ -1,21 +1,15 @@
 #pragma once
-#include <d3d11.h>
-#include <array>
+#include <sdk/dwm/addresses.hpp>
+#include <sdk/dwm/interfaces/drawing_context.hpp>
 
 namespace sdk {
     class c_dwm {
-        void** texture_table = nullptr;
-        void** target_table = nullptr;
-        ID3D11Texture2D*( __fastcall* get_texture )( void* ) = nullptr;
-        void( __fastcall* schedule )( UINT, UINT ) = nullptr;
-
       public:
 
-        std::array<const unsigned char*, 4> targets { };
+        c_dwm_addresses addresses;
 
         bool initialize( );
-        HRESULT frame_texture( void* context, ID3D11Texture2D** texture ) const;
-        void invalidate( void* monitor ) const;
+        HRESULT frame_texture( c_drawing_context* context, ID3D11Texture2D** texture ) const;
         void request_frame( ) const;
     };
 

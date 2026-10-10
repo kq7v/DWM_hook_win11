@@ -5,7 +5,7 @@
 #include <wrl/client.h>
 
 namespace sdk::hook_methods {
-    HRESULT __fastcall end_frame( void* context ) {
+    HRESULT __fastcall end_frame( c_drawing_context* context ) {
         // IsDisplayTarget() is also true for CDDASwapChain's capture buffer.
         // Only physical monitor passes may render the overlay into their native texture.
         if( !display_context || display_context != context ) {

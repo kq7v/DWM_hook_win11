@@ -11,12 +11,12 @@ namespace sdk {
         c_hooks instance;
 
         template <class F>
-        bool create_hook( const unsigned char* address, F method, F& original, void*& created ) {
+        bool create_hook( const void* address, F method, F& original, void*& created ) {
             if( !address ) {
                 return false;
             }
 
-            auto* target = const_cast<unsigned char*>( address );
+            auto* target = const_cast<void*>( address );
             if( MH_CreateHook( target, reinterpret_cast<void*>( method ), reinterpret_cast<void**>( &original ) ) !=
                 MH_OK ) {
                 return false;
@@ -36,11 +36,11 @@ namespace sdk {
             return false;
         }
 
-        const auto& native = dwm->targets;
-        return create_hook( native[ 0 ], &end_frame, end_frame_original, addresses[ 0 ] ) &&
-               create_hook( native[ 1 ], &legacy, legacy_original, addresses[ 1 ] ) &&
-               create_hook( native[ 2 ], &display, display_original, addresses[ 2 ] ) &&
-               create_hook( native[ 3 ], &present, present_original, addresses[ 3 ] );
+        const auto& native = dwm->addresses;
+        return create_hook( native.end_frame, &end_frame, end_frame_original, addresses[ 0 ] ) &&
+               create_hook( native.legacy_render_and_present, &legacy, legacy_original, addresses[ 1 ] ) &&
+               create_hook( native.display_render_and_present, &display, display_original, addresses[ 2 ] ) &&
+               create_hook( native.overlay_present, &present, present_original, addresses[ 3 ] );
     }
 
     void c_hooks::rollback( ) {

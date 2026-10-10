@@ -1,18 +1,17 @@
 #include <sdk/hooks/methods/methods.hpp>
-#include <sdk/dwm/dwm.hpp>
 #include <backends/dwm/dwm.hpp>
 
 namespace sdk::hook_methods {
-    thread_local void* display_context = nullptr;
+    thread_local c_drawing_context* display_context = nullptr;
 
     namespace {
         struct display_pass {
-            void* previous = display_context;
+            c_drawing_context* previous = display_context;
 
-            display_pass( void* monitor, void* context ) {
+            display_pass( c_render_target* monitor, c_drawing_context* context ) {
                 display_context = context;
                 if( backends::dwm->needs_redraw( ) ) {
-                    sdk::dwm->invalidate( monitor );
+                    monitor->force_full_dirty( );
                 }
             }
 
@@ -22,12 +21,12 @@ namespace sdk::hook_methods {
         };
     }
 
-    HRESULT __fastcall legacy( void* monitor, void* context ) {
+    HRESULT __fastcall legacy( c_render_target* monitor, c_drawing_context* context ) {
         display_pass scope( monitor, context );
         return legacy_original( monitor, context );
     }
 
-    HRESULT __fastcall display( void* monitor, void* context ) {
+    HRESULT __fastcall display( c_render_target* monitor, c_drawing_context* context ) {
         display_pass scope( monitor, context );
         return display_original( monitor, context );
     }
